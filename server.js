@@ -53,12 +53,27 @@ app.get('/projects', (req, res) => {
     let authtoken = bitbucket_api_token;
     fetchBitbucketAPIData(url, authtoken)
         .then((data) => {
-            // console.log(data);
-            // return data;
             return sendBitbucketDataToLogstash(data, "http://"+logstash_name+":8051")
         })
         .then((data) => {
-            // res.send(JSON.parse(data));
+            res.send(data);
+        }, (err) => {
+            res.send(err);
+        }).catch((err) => {
+            res.send(err);
+        });
+});
+
+
+
+app.get('/users', (req, res) => {
+    let url = "https://"+bitbucket_org_url+"/rest/api/2/user/search/?username=%25&maxResults=10000";
+    let authtoken = bitbucket_api_token;
+    fetchBitbucketAPIData(url, authtoken)
+        .then((data) => {
+            return sendBitbucketDataToLogstash(data, "http://"+logstash_name+":8052")
+        })
+        .then((data) => {
             res.send(data);
         }, (err) => {
             res.send(err);
