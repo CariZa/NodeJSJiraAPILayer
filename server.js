@@ -3,8 +3,8 @@
 // if not, tell the user
 
 let requiredEnvironmentVariables = [
-    'BITBUCKET_API_TOKEN',
-    'BITBUCKET_ORGANISATION_DOMAIN'
+    'JIRA_API_TOKEN',
+    'JIRA_ORGANISATION_DOMAIN'
 ];
 
 function requiredFieldsAreValid() {
@@ -33,13 +33,13 @@ if (!requiredFieldsAreValid()) {
 
 
 var express = require('express'),
-app = express(),
-request = require('request'),
-rp = require('request-promise'),
-logstash_name = process.env.LOGSTASH_NAME || "logstash",
-port = process.env.PORT || 3000,
-bitbucket_api_token = process.env.BITBUCKET_API_TOKEN,
-bitbucket_org_url = process.env.BITBUCKET_ORGANISATION_DOMAIN;
+    app = express(),
+    request = require('request'),
+    rp = require('request-promise'),
+    logstash_name = process.env.LOGSTASH_NAME || "logstash",
+    port = process.env.PORT || 3005,
+    jira_api_token = process.env.JIRA_API_TOKEN,
+    jira_org_url = process.env.JIRA_ORGANISATION_DOMAIN;
 
 app.listen(port, () => {
     console.log('Environment variable PORT is: ' + port);
@@ -49,8 +49,8 @@ app.listen(port, () => {
 
 
 app.get('/projects', (req, res) => {
-    let url = "https://"+bitbucket_org_url+"/rest/api/2/project";
-    let authtoken = bitbucket_api_token;
+    let url = "https://"+jira_org_url+"/rest/api/2/project";
+    let authtoken = jira_api_token;
     fetchBitbucketAPIData(url, authtoken)
         .then((data) => {
             return sendBitbucketDataToLogstash(data, "http://"+logstash_name+":8051")
@@ -67,8 +67,8 @@ app.get('/projects', (req, res) => {
 
 
 app.get('/users', (req, res) => {
-    let url = "https://"+bitbucket_org_url+"/rest/api/2/user/search/?username=%25&maxResults=10000";
-    let authtoken = bitbucket_api_token;
+    let url = "https://"+jira_org_url+"/rest/api/2/user/search/?username=%25&maxResults=10000";
+    let authtoken = jira_api_token;
     fetchBitbucketAPIData(url, authtoken)
         .then((data) => {
             return sendBitbucketDataToLogstash(data, "http://"+logstash_name+":8052")
@@ -93,8 +93,6 @@ function fetchBitbucketAPIData(url, authtoken) {
     let options = {url, headers};
     return rp(options).then((body) => {
         return body;
-    }, (err) => {
-        return err;
     });
 }
 
@@ -113,8 +111,5 @@ function sendBitbucketDataToLogstash(data, url) {
     };
     return rp(options).then((body) => {
         return body;
-    }, (err) => {
-        console.log("ERRRRR",err);
-        return err;
     });
 }

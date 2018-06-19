@@ -1,4 +1,21 @@
+## Use this api
+
+Endpoints:
+
+    /users
+    /projects
+
+Run Docker Container:
+
+    docker run --rm -d --name bitbucketapi -p 3000:3000 cariza/bitbucketapi
+
+Run as a swarm service:
+
+    docker service create --name bitbucketapi -p 3000:3000 cariza/bitbucketapi
+
 ## Setup a nodejs api layer
+
+### Setup
 
 Initialise your package.json by running:
 
@@ -11,11 +28,15 @@ Install these packages:
     npm install request --save
     npm install request-promise --save
 
-Create an index.js file
+### Create server.js file
 
-    touch index.js
+Create an server.js file
 
-Example code for index.js file:
+    touch server.js
+
+### Examples of code
+
+Example code for server.js file:
 
 The requirements:
     
@@ -37,6 +58,8 @@ Initialise the app and listen on a port:
         console.log('Environment variables LOGSTASH_NAME is: ' + logstash_name);
     });
 
+### Routes
+
 Example get method. This will allow you to go to the nodejs app's url and go to the endpoint you specify: 
 
     app.get('/members', (req, res) => {
@@ -55,6 +78,22 @@ http://127.0.0.1:3000/members
 
 
 Create a promise chain/request:
+
+#### GET
+
+    let headers = {
+        // 'User-Agent': 'request',
+        'Authorization' : 'Basic '+ authtoken,
+        'Content-Type': 'application/json'
+    };
+    let options = {url, headers};
+    return rp(options).then((body) => {
+        return body;
+    }, (err) => {
+        return err;
+    });
+
+#### POST
 
     let headers = {
         "Content-Type": "application/json"
