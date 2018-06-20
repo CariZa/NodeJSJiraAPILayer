@@ -2,6 +2,9 @@
 // Just a useful check if the right environment variables are set,
 // if not, tell the user
 
+// Run this command to test the nodejs layer:
+// JIRA_API_TOKEN=xxx JIRA_ORGANISATION_DOMAIN=xxx  node server.js
+
 let requiredEnvironmentVariables = [
     'JIRA_API_TOKEN',
     'JIRA_ORGANISATION_DOMAIN'
@@ -37,7 +40,9 @@ var express = require('express'),
     request = require('request'),
     rp = require('request-promise'),
     logstash_name = process.env.LOGSTASH_NAME || "logstash",
-    port = process.env.PORT || 3005,
+    logstash_port_1 = process.env.LOGSTASH_PORT_1 || 8051,
+    logstash_port_2 = process.env.LOGSTASH_PORT_2 || 8052,
+    port = process.env.PORT || 3000,
     jira_api_token = process.env.JIRA_API_TOKEN,
     jira_org_url = process.env.JIRA_ORGANISATION_DOMAIN;
 
@@ -51,65 +56,76 @@ app.listen(port, () => {
 app.get('/projects', (req, res) => {
     let url = "https://"+jira_org_url+"/rest/api/2/project";
     let authtoken = jira_api_token;
-    fetchBitbucketAPIData(url, authtoken)
+    getData(url, authtoken)
         .then((data) => {
-            return sendBitbucketDataToLogstash(data, "http://"+logstash_name+":8051")
+            return postData("http://"+logstash_name+":"+logstash_port_1, data)
         })
         .then((data) => {
             res.send(data);
-        }, (err) => {
-            res.send(err);
-        }).catch((err) => {
-            res.send(err);
-        });
+        })
+            .catch((err) => {
+                res.send(err);
+            });
 });
 
 
 
 app.get('/users', (req, res) => {
-    let url = "https://"+jira_org_url+"/rest/api/2/user/search/?username=%25&maxResults=10000";
+    let url = "https://"+jira_org_url+"/rest/api/2/user/search/?username=%25&maxResults=2000";
     let authtoken = jira_api_token;
-    fetchBitbucketAPIData(url, authtoken)
+    getData(url, authtoken)
         .then((data) => {
-            return sendBitbucketDataToLogstash(data, "http://"+logstash_name+":8052")
+            return postData("http://"+logstash_name+":"+logstash_port_2, data)
         })
         .then((data) => {
             res.send(data);
-        }, (err) => {
-            res.send(err);
-        }).catch((err) => {
-            res.send(err);
-        });
+        })
+            .catch((err) => {
+                res.send(err);
+            });
 });
 
 
 
-function fetchBitbucketAPIData(url, authtoken) {
+function getData(url, authtoken) {
+    // Note, the auth token in this case is a base64 string of the syntax: "username:password"
     let headers = {
-        // 'User-Agent': 'request',
+        'User-Agent': 'request',
         'Authorization' : 'Basic '+ authtoken,
         'Content-Type': 'application/json'
     };
     let options = {url, headers};
-    return rp(options).then((body) => {
-        return body;
+    return rp(options).then((data) => {
+        console.log("getData result: data", data);
+        return data;
     });
+
 }
 
 
 
-function sendBitbucketDataToLogstash(data, url) {
+function postData(url, sendlogstash_data) {
+
+    if (sendlogstash_data === undefined) {
+        console.log("No logdashdata to send.");
+        return;
+    }
+
     let headers = {
         "Content-Type": "application/json"
     };
+    
     let options = {
         method: "POST",
-        body: JSON.parse(data),
+        body: JSON.parse(sendlogstash_data),
         url, 
         headers,
         json: true
     };
+
     return rp(options).then((body) => {
-        return body;
+        // Send back the data for logstash so you can see what was sent
+        return sendlogstash_data;
     });
+
 }
